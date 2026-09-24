@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 )
@@ -52,7 +53,7 @@ func (s *Service) History(ctx context.Context, filter HistoryFilter) (HistoryPag
 	if filter.Limit == 0 {
 		filter.Limit = 50
 	}
-	if filter.Limit < 1 || filter.Limit > 100 || len(filter.Query) > 100 || len(filter.Cursor) > 256 ||
+	if filter.Limit < 1 || filter.Limit > 100 || utf8.RuneCountInString(filter.Query) > 100 || len(filter.Cursor) > 256 ||
 		(filter.Delivery != "" && filter.Delivery != "no_pr" && filter.Delivery != "merged" && filter.Delivery != "open" && filter.Delivery != "closed_unmerged") {
 		return HistoryPage{}, fmt.Errorf("invalid history query")
 	}

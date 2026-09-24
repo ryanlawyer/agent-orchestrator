@@ -71,6 +71,16 @@ func TestHistoryAcceptsZeroEpochCursor(t *testing.T) {
 	}
 }
 
+func TestHistoryQueryLimitCountsUnicodeCharacters(t *testing.T) {
+	service := &Service{store: newFakeStore()}
+	if _, err := service.History(context.Background(), HistoryFilter{Query: strings.Repeat("界", 100)}); err != nil {
+		t.Fatalf("rejected 100-character query: %v", err)
+	}
+	if _, err := service.History(context.Background(), HistoryFilter{Query: strings.Repeat("界", 101)}); err == nil {
+		t.Fatal("accepted 101-character query")
+	}
+}
+
 func TestRetentionAssessmentFailsClosed(t *testing.T) {
 	old := time.Now().UTC().AddDate(-1, 0, 0)
 	worker := domain.SessionRecord{Kind: domain.KindWorker}
