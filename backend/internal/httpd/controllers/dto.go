@@ -378,6 +378,7 @@ type HistorySessionsResponse struct {
 	NextCursor string               `json:"nextCursor,omitempty"`
 }
 
+// HistorySessionView exposes a stopped session with its cleanup and retention facts.
 type HistorySessionView struct {
 	Session              SessionView                 `json:"session"`
 	StoppedAt            *time.Time                  `json:"stoppedAt,omitempty" description:"Authoritative latest stop time; absent for legacy records with unknown stop time."`

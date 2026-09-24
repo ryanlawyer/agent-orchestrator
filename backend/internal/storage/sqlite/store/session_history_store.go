@@ -16,20 +16,18 @@ func (s *Store) ListActiveSessionRecords(ctx context.Context, project domain.Pro
 	if err != nil {
 		return nil, fmt.Errorf("list active session ids: %w", err)
 	}
+	defer func() { _ = rows.Close() }()
 	ids := make([]domain.SessionID, 0)
 	for rows.Next() {
 		var id domain.SessionID
 		if err := rows.Scan(&id); err != nil {
-			_ = rows.Close()
 			return nil, fmt.Errorf("scan active session id: %w", err)
 		}
 		ids = append(ids, id)
 	}
 	if err := rows.Err(); err != nil {
-		_ = rows.Close()
 		return nil, fmt.Errorf("read active session ids: %w", err)
 	}
-	_ = rows.Close()
 	recs := make([]domain.SessionRecord, 0, len(ids))
 	for _, id := range ids {
 		rec, exists, err := s.GetSession(ctx, id)
@@ -81,7 +79,7 @@ LIMIT ?`,
 	if err != nil {
 		return nil, fmt.Errorf("list session history: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	entries := make([]domain.SessionHistoryEntry, 0, filter.Limit+1)
 	for rows.Next() {
 		var entry domain.SessionHistoryEntry

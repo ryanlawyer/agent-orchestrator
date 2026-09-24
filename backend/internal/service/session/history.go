@@ -12,6 +12,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 )
 
+// HistoryFilter selects a bounded page of stopped sessions.
 type HistoryFilter struct {
 	ProjectID domain.ProjectID
 	Kind      domain.SessionKind
@@ -22,6 +23,7 @@ type HistoryFilter struct {
 	Limit     int
 }
 
+// HistoryItem combines a stopped session with its cleanup and retention facts.
 type HistoryItem struct {
 	Session              domain.Session
 	StoppedAt            *time.Time
@@ -30,6 +32,7 @@ type HistoryItem struct {
 	RetentionHolds       []string
 }
 
+// HistoryPage contains stopped sessions and the cursor for the next page.
 type HistoryPage struct {
 	Sessions   []HistoryItem
 	NextCursor string
