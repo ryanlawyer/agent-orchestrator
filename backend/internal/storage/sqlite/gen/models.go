@@ -624,6 +624,8 @@ type Session struct {
 	LatestAssistantUpdateAt          sql.NullTime
 	NativeIdentityObservedAt         sql.NullTime
 	Effort                           string
+	StoppedAt                        sql.NullTime
+	HistorySortEpoch                 int64
 }
 
 type SessionCleanupFact struct {
