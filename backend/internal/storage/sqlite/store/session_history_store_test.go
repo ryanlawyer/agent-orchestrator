@@ -86,6 +86,33 @@ func TestSessionHistoryTreatsSearchWildcardsLiterally(t *testing.T) {
 	}
 }
 
+func TestSessionHistoryPagesAcrossZeroEpochRows(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	seedProject(t, s, "mer")
+	for i := 0; i < 3; i++ {
+		rec := sampleRecord("mer")
+		rec.IsTerminated = true
+		rec.CreatedAt = time.Unix(0, 0).UTC()
+		rec.UpdatedAt = rec.CreatedAt
+		if _, err := s.CreateSession(ctx, rec); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, err := s.ListSessionHistory(ctx, domain.SessionHistoryFilter{ProjectID: "mer", Limit: 1})
+	if err != nil || len(first) != 2 || first[0].SortEpoch != 0 {
+		t.Fatalf("first zero-epoch page = %+v, %v", first, err)
+	}
+	second, err := s.ListSessionHistory(ctx, domain.SessionHistoryFilter{ProjectID: "mer", Limit: 1, BeforeEpoch: 0, BeforeID: first[0].ID})
+	if err != nil || len(second) != 2 || second[0].ID == first[0].ID || second[0].SortEpoch != 0 {
+		t.Fatalf("second zero-epoch page = %+v, %v", second, err)
+	}
+	third, err := s.ListSessionHistory(ctx, domain.SessionHistoryFilter{ProjectID: "mer", Limit: 1, BeforeEpoch: 0, BeforeID: second[0].ID})
+	if err != nil || len(third) != 1 || third[0].ID == second[0].ID || third[0].SortEpoch != 0 {
+		t.Fatalf("third zero-epoch page = %+v, %v", third, err)
+	}
+}
+
 func TestActiveSessionRecordsExcludeStoppedArchive(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()

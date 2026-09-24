@@ -68,7 +68,7 @@ WHERE is_terminated = 1
       AND NOT EXISTS (SELECT 1 FROM pr WHERE pr.session_id = sessions.id AND pr.pr_state IN ('open', 'draft', 'merged'))))
   AND (? = '' OR lower(display_name) LIKE ? ESCAPE '\' OR lower(id) LIKE ? ESCAPE '\' OR lower(branch) LIKE ? ESCAPE '\')
   AND (? = 0 OR (stopped_at IS NOT NULL AND history_sort_epoch >= ?))
-  AND (? = 0 OR history_sort_epoch < ? OR (history_sort_epoch = ? AND id < ?))
+  AND (? = '' OR history_sort_epoch < ? OR (history_sort_epoch = ? AND id < ?))
 ORDER BY history_sort_epoch DESC, id DESC
 LIMIT ?`,
 		filter.ProjectID, filter.ProjectID,
@@ -76,7 +76,7 @@ LIMIT ?`,
 		filter.Delivery, filter.Delivery, filter.Delivery, filter.Delivery, filter.Delivery,
 		query, pattern, pattern, pattern,
 		filter.SinceEpoch, filter.SinceEpoch,
-		filter.BeforeEpoch, filter.BeforeEpoch, filter.BeforeEpoch, filter.BeforeID,
+		filter.BeforeID, filter.BeforeEpoch, filter.BeforeEpoch, filter.BeforeID,
 		filter.Limit+1)
 	if err != nil {
 		return nil, fmt.Errorf("list session history: %w", err)

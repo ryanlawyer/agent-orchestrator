@@ -67,7 +67,7 @@ func (s *Service) History(ctx context.Context, filter HistoryFilter) (HistoryPag
 		}
 		epochText, id, found := strings.Cut(string(decoded), "/")
 		epoch, err := strconv.ParseInt(epochText, 10, 64)
-		if !found || err != nil || epoch < 1 || id == "" || len(id) > 128 || strings.Contains(id, "/") {
+		if !found || err != nil || epoch < 0 || id == "" || len(id) > 128 || strings.Contains(id, "/") {
 			return HistoryPage{}, fmt.Errorf("invalid history cursor")
 		}
 		storeFilter.BeforeEpoch = epoch
@@ -103,13 +103,16 @@ func (s *Service) History(ctx context.Context, filter HistoryFilter) (HistoryPag
 		if !exists || !rec.IsTerminated {
 			continue // A concurrent restore moved this session out of History.
 		}
-		_, activeSwitch, err := s.store.GetActiveAgentSwitch(ctx, entry.ID)
+		switchRec, activeSwitch, err := s.store.GetActiveAgentSwitch(ctx, entry.ID)
 		if err != nil {
 			return HistoryPage{}, fmt.Errorf("get history agent switch %s: %w", entry.ID, err)
 		}
 		sess, err := s.toSessionWithFacts(rec, prs[entry.ID], runs[entry.ID])
 		if err != nil {
 			return HistoryPage{}, err
+		}
+		if activeSwitch {
+			sess.ActiveAgentSwitch = &switchRec
 		}
 		item := HistoryItem{Session: sess, StoppedAt: entry.StoppedAt, RetentionHolds: []string{}}
 		if reader, ok := s.store.(historyCleanupReader); ok {

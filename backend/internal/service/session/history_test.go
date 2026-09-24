@@ -15,6 +15,7 @@ func TestHistoryBindsNextCursorAndDoesNotReadUnselectedRows(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 	st.sessions["mer-3"] = domain.SessionRecord{ID: "mer-3", ProjectID: "mer", Kind: domain.KindWorker, IsTerminated: true, UpdatedAt: now}
 	st.sessions["mer-2"] = domain.SessionRecord{ID: "mer-2", ProjectID: "mer", Kind: domain.KindWorker, IsTerminated: true, UpdatedAt: now}
+	st.activeSwitches["mer-3"] = domain.AgentSwitch{ID: "switch-3", SessionID: "mer-3", State: domain.AgentSwitchPreparingHandoff}
 	st.historyEntries = []domain.SessionHistoryEntry{
 		{ID: "mer-3", SortEpoch: now.Unix(), StoppedAt: &now},
 		{ID: "mer-2", SortEpoch: now.Unix() - 1, StoppedAt: &now},
@@ -35,6 +36,9 @@ func TestHistoryBindsNextCursorAndDoesNotReadUnselectedRows(t *testing.T) {
 	if !strings.Contains(strings.Join(page.Sessions[0].RetentionHolds, ","), "backup_unverified") {
 		t.Fatalf("holds = %+v", page.Sessions[0].RetentionHolds)
 	}
+	if page.Sessions[0].Session.ActiveAgentSwitch == nil || page.Sessions[0].Session.ActiveAgentSwitch.ID != "switch-3" {
+		t.Fatalf("history active switch = %+v", page.Sessions[0].Session.ActiveAgentSwitch)
+	}
 }
 
 func stringMustDecode(t *testing.T, value string) []byte {
@@ -53,6 +57,17 @@ func TestHistoryRejectsInvalidCursorAndDelivery(t *testing.T) {
 		if _, err := service.History(context.Background(), filter); err == nil {
 			t.Fatalf("accepted %+v", filter)
 		}
+	}
+}
+
+func TestHistoryAcceptsZeroEpochCursor(t *testing.T) {
+	st := newFakeStore()
+	cursor := base64.RawURLEncoding.EncodeToString([]byte("0/mer-1"))
+	if _, err := (&Service{store: st}).History(context.Background(), HistoryFilter{Cursor: cursor}); err != nil {
+		t.Fatal(err)
+	}
+	if st.historyFilter.BeforeEpoch != 0 || st.historyFilter.BeforeID != "mer-1" {
+		t.Fatalf("zero-epoch cursor filter = %+v", st.historyFilter)
 	}
 }
 
