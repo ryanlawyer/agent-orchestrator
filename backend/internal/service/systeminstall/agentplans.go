@@ -35,6 +35,7 @@ var agentDocumentationURLs = map[Target]string{
 	TargetKimchi:     "https://docs.kimchi.dev/docs/coding-getting-started",
 	TargetPrimeAgent: "https://github.com/PrimeIntellect-ai/prime-agent/blob/main/packages/coding-agent/docs/quickstart.md",
 	TargetOMP:        "https://github.com/can1357/oh-my-pi",
+	TargetOpenHands:  "https://docs.openhands.dev/openhands/usage/cli/installation",
 }
 
 func (s requestPlanner) agentMethodPlans(target Target, operation AgentOperation) []Plan {
@@ -196,6 +197,14 @@ func (s requestPlanner) agentMethodPlans(target Target, operation AgentOperation
 			plans = []Plan{s.planBrew(target, "can1357/tap/omp"), s.planBun(target), official}
 		} else {
 			plans = []Plan{s.planBun(target), official}
+		}
+	case TargetOpenHands:
+		// The package pins Requires-Python ==3.12.*, which uv resolves (and
+		// downloads if needed) on its own; pipx would need a 3.12 interpreter
+		// already on PATH, so it is not offered.
+		plans = []Plan{s.planUV(target, "openhands")}
+		if s.goos == "darwin" || s.goos == "linux" {
+			plans = append(plans, s.planShellInstaller(target, "https://install.openhands.dev/install.sh", "sh"))
 		}
 	default:
 		plans = []Plan{{Target: target, Unsupported: true, Method: "manual", Reason: "unknown install target"}}
